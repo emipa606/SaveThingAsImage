@@ -1,5 +1,5 @@
 # SaveThingAsImage
-
+
 ![Image](https://i.imgur.com/buuPQel.png)
 
 
@@ -20,4 +20,7 @@ Hopefully someone more than me can get use of it!
 -  Do not report errors by making a discussion-thread, I get no notification of that.
 -  If you have the solution for a problem, please post it to the GitHub repository.
 
-
+<p align="center">
+    <a href="https://github.com/emipa606/SaveThingAsImage/actions/workflows/code_quality.yml">
+        <img src="https://github.com/emipa606/SaveThingAsImage/actions/workflows/code_quality.yml/badge.svg"></a>
+</p>
