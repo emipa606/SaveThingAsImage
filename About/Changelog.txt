@@ -1,4 +1,7 @@
 # Changelog for SaveThingAsImage
 
+1.4.1 - Should now work with any large pawn without clipping the image.
+
+
 1.4.0 - First publish
 

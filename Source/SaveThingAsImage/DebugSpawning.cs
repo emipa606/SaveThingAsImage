@@ -132,15 +132,15 @@ public static class DebugSpawning
                 pawn = ((Corpse)thing).InnerPawn;
             }
 
-            if (pawn.RaceProps.Humanlike)
+            var zoomLevel = 1f;
+            texture = PortraitsCache.Get(pawn, size, thing.Rotation);
+            var regen = TextureToBig(texture);
+            while (regen)
             {
-                texture = PortraitsCache.Get(pawn, size, thing.Rotation);
-            }
-            else
-            {
-                var zoomLevel = 400f / ((size.x + size.y) / 2);
-
+                zoomLevel *= 0.95f;
                 texture = PortraitsCache.Get(pawn, size, thing.Rotation, default, zoomLevel);
+                regen = TextureToBig(texture);
+                Log.Message($"Texture too big for {pawn}, recreating");
             }
 
             Graphics.Blit(texture, renderTexture);
@@ -163,5 +163,63 @@ public static class DebugSpawning
         RenderTexture.active = previous;
         RenderTexture.ReleaseTemporary(renderTexture);
         return image;
+    }
+
+    private static bool TextureToBig(Texture texture)
+    {
+        var renderTexture = RenderTexture.GetTemporary(
+            texture.width,
+            texture.height,
+            0,
+            RenderTextureFormat.Default,
+            RenderTextureReadWrite.Linear);
+        Graphics.Blit(texture, renderTexture);
+        var previous = RenderTexture.active;
+        RenderTexture.active = renderTexture;
+        var icon = new Texture2D(texture.width, texture.height);
+        icon.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        icon.Apply();
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(renderTexture);
+
+        var y = 0;
+        int x;
+        for (x = 0; x < icon.width; x++)
+        {
+            if (icon.GetPixel(x, y).a > 0)
+            {
+                return true;
+            }
+        }
+
+        y = icon.height - 1;
+        for (x = 0; x < icon.width; x++)
+        {
+            if (icon.GetPixel(x, y).a > 0)
+            {
+                return true;
+            }
+        }
+
+        x = 0;
+        for (y = 1; y < icon.height - 1; y++)
+        {
+            if (icon.GetPixel(x, y).a > 0)
+            {
+                return true;
+            }
+        }
+
+
+        x = icon.width - 1;
+        for (y = 1; y < icon.height - 1; y++)
+        {
+            if (icon.GetPixel(x, y).a > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
