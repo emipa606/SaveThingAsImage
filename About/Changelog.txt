@@ -1,5 +1,8 @@
 # Changelog for SaveThingAsImage
 
+1.4.2 - Added support for saving vehicles from [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3014915404]Vehicle Framework[/url]
+
+
 1.4.1 - Should now work with any large pawn without clipping the image.
 
 

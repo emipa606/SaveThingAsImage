@@ -1,6 +1,6 @@
 # SaveThingAsImage
 
-![Image](https://i.imgur.com/buuPQel.png)
+![Image](https://i.imgur.com/iCj5o7O.png)
 
 
 I was creating a preview image for a mod and got frustrated that even with the games texture sources downloaded I could not really capture the specific texture I wanted. Pawns, items and buildings can have dynamic colors and shadows in game compared to the source textures.
@@ -10,7 +10,7 @@ When used you can click on any Thing in game and it will export the graphic as s
 
 Hopefully someone more than me can get use of it!
 
-![Image](https://i.imgur.com/PwoNOj4.png)
+![Image](https://i.imgur.com/5xwDG6H.png)
 
 
 
@@ -22,4 +22,4 @@ Hopefully someone more than me can get use of it!
 -  If you have the solution for a problem, please post it to the GitHub repository.
 
 
-https://steamcommunity.com/sharedfiles/filedetails/changelog/2930015327]Last updated 2023-02-10
+https://steamcommunity.com/sharedfiles/filedetails/changelog/2930015327]Last updated 2023-08-26

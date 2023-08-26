@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using HarmonyLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -36,9 +37,23 @@ public static class DebugSpawning
         {
             case Pawn pawn:
                 saveTo = $"{Path.Combine(SavePath, pawn.NameShortColored)}_{thing.Rotation.ToStringHuman()}.png";
-                bodyMesh = pawn.RaceProps.Humanlike
-                    ? HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(pawn).MeshAt(pawn.Rotation)
-                    : pawn.drawer.renderer.graphics.nakedGraphic.MeshAt(pawn.Rotation);
+
+                if (pawn.def.thingClass.Name.Contains("Vehicle"))
+                {
+                    var VehiclePawnType = AccessTools.TypeByName("VehiclePawn");
+                    var VehicleGraphicProperty = AccessTools.Property(VehiclePawnType, "VehicleGraphic");
+                    var VehicleGraphic = VehicleGraphicProperty.GetValue(pawn);
+                    var Graphic_RGBType = AccessTools.TypeByName("Graphic_RGB");
+                    var MeshAtMethod = AccessTools.Method(Graphic_RGBType, "MeshAt", new[] { typeof(Rot4) });
+                    bodyMesh = (Mesh)MeshAtMethod.Invoke(VehicleGraphic, new object[] { thing.Rotation });
+                }
+                else
+
+                {
+                    bodyMesh = pawn.RaceProps.Humanlike
+                        ? HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(pawn).MeshAt(pawn.Rotation)
+                        : pawn.drawer.renderer.graphics.nakedGraphic.MeshAt(pawn.Rotation);
+                }
 
                 meshSize = bodyMesh.bounds.size;
                 break;
