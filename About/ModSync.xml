@@ -2,7 +2,7 @@
 <ModSyncNinjaData>
   <ID>c48d43a1-a106-48fa-86f7-29700ceba34d</ID>
   <ModName>Save Thing As Image</ModName>
-  <Version>1.4.2</Version>
+  <Version>1.5.0</Version>
   <SaveBreaking>False</SaveBreaking>
   <Host name="Github">
     <Owner>emipa606</Owner>

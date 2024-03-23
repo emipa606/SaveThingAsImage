@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using HarmonyLib;
+using LudeonTK;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -44,15 +45,15 @@ public static class DebugSpawning
                     var VehicleGraphicProperty = AccessTools.Property(VehiclePawnType, "VehicleGraphic");
                     var VehicleGraphic = VehicleGraphicProperty.GetValue(pawn);
                     var Graphic_RGBType = AccessTools.TypeByName("Graphic_RGB");
-                    var MeshAtMethod = AccessTools.Method(Graphic_RGBType, "MeshAt", new[] { typeof(Rot4) });
-                    bodyMesh = (Mesh)MeshAtMethod.Invoke(VehicleGraphic, new object[] { thing.Rotation });
+                    var MeshAtMethod = AccessTools.Method(Graphic_RGBType, "MeshAt", [typeof(Rot4)]);
+                    bodyMesh = (Mesh)MeshAtMethod.Invoke(VehicleGraphic, [thing.Rotation]);
                 }
                 else
 
                 {
                     bodyMesh = pawn.RaceProps.Humanlike
                         ? HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(pawn).MeshAt(pawn.Rotation)
-                        : pawn.drawer.renderer.graphics.nakedGraphic.MeshAt(pawn.Rotation);
+                        : pawn.Drawer.renderer.BodyGraphic.MeshAt(pawn.Rotation);
                 }
 
                 meshSize = bodyMesh.bounds.size;
@@ -63,7 +64,7 @@ public static class DebugSpawning
                 bodyMesh = corpse.InnerPawn.RaceProps.Humanlike
                     ? HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(corpse.InnerPawn)
                         .MeshAt(corpse.InnerPawn.Rotation)
-                    : corpse.InnerPawn.drawer.renderer.graphics.nakedGraphic.MeshAt(corpse.InnerPawn.Rotation);
+                    : corpse.InnerPawn.Drawer.renderer.BodyGraphic.MeshAt(corpse.InnerPawn.Rotation);
 
                 meshSize = bodyMesh.bounds.size;
                 break;
@@ -104,7 +105,7 @@ public static class DebugSpawning
                     {
                         var num = thing.overrideGraphicIndex ?? thing.thingIDNumber;
                         var graphicObject = (Graphic_Random)thing.Graphic;
-                        var graphicNumber = num % graphicObject.subGraphics.Length;
+                        var graphicNumber = num % graphicObject.SubGraphicsCount;
                         saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}_{graphicNumber}.png";
                     }
                 }
