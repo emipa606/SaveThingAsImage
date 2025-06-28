@@ -11,25 +11,25 @@ namespace SpawnModContent;
 
 public static class DebugSpawning
 {
-    private static string SavePath;
+    private static string savePath;
 
     [DebugAction("Spawning", "Save Thing as image", actionType = DebugActionType.ToolMap,
         allowedGameStates = AllowedGameStates.PlayingOnMap)]
-    private static void Save()
+    private static void save()
     {
-        SavePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        if (SavePath.NullOrEmpty())
+        savePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        if (savePath.NullOrEmpty())
         {
-            SavePath = GenFilePaths.SaveDataFolderPath;
+            savePath = GenFilePaths.SaveDataFolderPath;
         }
 
         foreach (var thing in Find.CurrentMap.thingGrid.ThingsAt(UI.MouseCell()).ToList())
         {
-            SaveThing(thing);
+            saveThing(thing);
         }
     }
 
-    private static void SaveThing(Thing thing)
+    private static void saveThing(Thing thing)
     {
         string saveTo;
         Mesh bodyMesh;
@@ -37,16 +37,16 @@ public static class DebugSpawning
         switch (thing)
         {
             case Pawn pawn:
-                saveTo = $"{Path.Combine(SavePath, pawn.NameShortColored)}_{thing.Rotation.ToStringHuman()}.png";
+                saveTo = $"{Path.Combine(savePath, pawn.NameShortColored)}_{thing.Rotation.ToStringHuman()}.png";
 
                 if (pawn.def.thingClass.Name.Contains("Vehicle"))
                 {
-                    var VehiclePawnType = AccessTools.TypeByName("VehiclePawn");
-                    var VehicleGraphicProperty = AccessTools.Property(VehiclePawnType, "VehicleGraphic");
-                    var VehicleGraphic = VehicleGraphicProperty.GetValue(pawn);
-                    var Graphic_RGBType = AccessTools.TypeByName("Graphic_RGB");
-                    var MeshAtMethod = AccessTools.Method(Graphic_RGBType, "MeshAt", [typeof(Rot4)]);
-                    bodyMesh = (Mesh)MeshAtMethod.Invoke(VehicleGraphic, [thing.Rotation]);
+                    var vehiclePawnType = AccessTools.TypeByName("VehiclePawn");
+                    var vehicleGraphicProperty = AccessTools.Property(vehiclePawnType, "VehicleGraphic");
+                    var vehicleGraphic = vehicleGraphicProperty.GetValue(pawn);
+                    var graphicRGBType = AccessTools.TypeByName("Graphic_RGB");
+                    var meshAtMethod = AccessTools.Method(graphicRGBType, "MeshAt", [typeof(Rot4)]);
+                    bodyMesh = (Mesh)meshAtMethod.Invoke(vehicleGraphic, [thing.Rotation]);
                 }
                 else
 
@@ -60,7 +60,7 @@ public static class DebugSpawning
                 break;
             case Corpse corpse:
                 saveTo =
-                    $"{Path.Combine(SavePath, corpse.InnerPawn.NameShortColored)}_{thing.Rotation.ToStringHuman()}.png";
+                    $"{Path.Combine(savePath, corpse.InnerPawn.NameShortColored)}_{thing.Rotation.ToStringHuman()}.png";
                 bodyMesh = corpse.InnerPawn.RaceProps.Humanlike
                     ? HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(corpse.InnerPawn)
                         .MeshAt(corpse.InnerPawn.Rotation)
@@ -77,27 +77,27 @@ public static class DebugSpawning
                     return;
                 }
 
-                saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}.png";
+                saveTo = $"{Path.Combine(savePath, thing.LabelShort)}.png";
                 if (thing.Graphic.data?.graphicClass != null)
                 {
                     if (thing.Graphic.data.graphicClass == typeof(Graphic_Multi))
                     {
-                        saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}_{thing.Rotation.ToStringHuman()}.png";
+                        saveTo = $"{Path.Combine(savePath, thing.LabelShort)}_{thing.Rotation.ToStringHuman()}.png";
                     }
 
                     if (thing.def.stackLimit > 1)
                     {
                         if (thing.stackCount == 1)
                         {
-                            saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}.png";
+                            saveTo = $"{Path.Combine(savePath, thing.LabelShort)}.png";
                         }
                         else if (thing.stackCount == thing.def.stackLimit)
                         {
-                            saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}_full_stack.png";
+                            saveTo = $"{Path.Combine(savePath, thing.LabelShort)}_full_stack.png";
                         }
                         else
                         {
-                            saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}_stack.png";
+                            saveTo = $"{Path.Combine(savePath, thing.LabelShort)}_stack.png";
                         }
                     }
 
@@ -106,7 +106,7 @@ public static class DebugSpawning
                         var num = thing.overrideGraphicIndex ?? thing.thingIDNumber;
                         var graphicObject = (Graphic_Random)thing.Graphic;
                         var graphicNumber = num % graphicObject.SubGraphicsCount;
-                        saveTo = $"{Path.Combine(SavePath, thing.LabelShort)}_{graphicNumber}.png";
+                        saveTo = $"{Path.Combine(savePath, thing.LabelShort)}_{graphicNumber}.png";
                     }
                 }
 
@@ -117,7 +117,7 @@ public static class DebugSpawning
         }
 
         var thingSize = new Vector2(meshSize.x * 256, meshSize.z * 256);
-        var texture = GetThingTexture(thing, thingSize);
+        var texture = getThingTexture(thing, thingSize);
 
 
         var thingTextureAsPng = texture.EncodeToPNG();
@@ -126,7 +126,7 @@ public static class DebugSpawning
             false);
     }
 
-    private static Texture2D GetThingTexture(Thing thing, Vector2 size)
+    private static Texture2D getThingTexture(Thing thing, Vector2 size)
     {
         var renderTexture =
             RenderTexture.GetTemporary(
@@ -150,12 +150,12 @@ public static class DebugSpawning
 
             var zoomLevel = 1f;
             texture = PortraitsCache.Get(pawn, size, thing.Rotation);
-            var regen = TextureToBig(texture);
+            var regen = textureToBig(texture);
             while (regen)
             {
                 zoomLevel *= 0.95f;
                 texture = PortraitsCache.Get(pawn, size, thing.Rotation, default, zoomLevel);
-                regen = TextureToBig(texture);
+                regen = textureToBig(texture);
                 Log.Message($"Texture too big for {pawn}, recreating");
             }
 
@@ -181,7 +181,7 @@ public static class DebugSpawning
         return image;
     }
 
-    private static bool TextureToBig(Texture texture)
+    private static bool textureToBig(Texture texture)
     {
         var renderTexture = RenderTexture.GetTemporary(
             texture.width,
