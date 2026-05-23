@@ -117,7 +117,7 @@ public static class DebugSpawning
         }
 
         var thingSize = new Vector2(meshSize.x * 256, meshSize.z * 256);
-        var texture = getThingTexture(thing, thingSize);
+        var texture = getThingTexture(thing, thingSize, new Vector2(meshSize.x, meshSize.z));
 
 
         var thingTextureAsPng = texture.EncodeToPNG();
@@ -126,7 +126,7 @@ public static class DebugSpawning
             false);
     }
 
-    private static Texture2D getThingTexture(Thing thing, Vector2 size)
+    private static Texture2D getThingTexture(Thing thing, Vector2 size, Vector2 worldSize)
     {
         var renderTexture =
             RenderTexture.GetTemporary(
@@ -176,9 +176,119 @@ public static class DebugSpawning
         var image = new Texture2D(renderTexture.width, renderTexture.height);
         image.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
         image.Apply();
+
+        if (thing is Building_Turret turret)
+        {
+            drawTurretTop(turret, image, worldSize);
+            image.Apply();
+        }
+
         RenderTexture.active = previous;
         RenderTexture.ReleaseTemporary(renderTexture);
         return image;
+    }
+
+    private static void drawTurretTop(Building_Turret turret, Texture2D image, Vector2 worldSize)
+    {
+        if (turret.TurretTopMaterial?.mainTexture == null || turret.TurretTopMaterial.mainTexture == BaseContent.BadTex)
+        {
+            return;
+        }
+
+        var topImage = toReadableTexture(turret.TurretTopMaterial.mainTexture);
+        var topOffset = turret.def.building.turretTopOffset;
+        var topDrawSize = turret.def.building.turretTopDrawSize;
+
+        var turretRotation = turret.Rotation.AsAngle;
+        if (turret is Building_TurretGun turretGun)
+        {
+            turretRotation = turretGun.Top.CurRotation;
+        }
+
+        var angle = (turretRotation + TurretTop.ArtworkRotation) * Mathf.Deg2Rad;
+        var cos = Mathf.Cos(angle);
+        var sin = Mathf.Sin(angle);
+
+        var centerX = image.width * 0.5f;
+        var centerY = image.height * 0.5f;
+
+        var offsetX = worldSize.x == 0f ? 0f : topOffset.x / worldSize.x * image.width;
+        var offsetY = worldSize.y == 0f ? 0f : topOffset.y / worldSize.y * image.height;
+
+        var topWidth = worldSize.x == 0f ? image.width : topDrawSize / worldSize.x * image.width;
+        var topHeight = worldSize.y == 0f ? image.height : topDrawSize / worldSize.y * image.height;
+
+        var pivotX = centerX + offsetX;
+        var pivotY = centerY - offsetY;
+
+        var halfW = topWidth * 0.5f;
+        var halfH = topHeight * 0.5f;
+
+        var minX = Mathf.Max(0, Mathf.FloorToInt(pivotX - Mathf.Max(halfW, halfH)) - 2);
+        var maxX = Mathf.Min(image.width - 1, Mathf.CeilToInt(pivotX + Mathf.Max(halfW, halfH)) + 2);
+        var minY = Mathf.Max(0, Mathf.FloorToInt(pivotY - Mathf.Max(halfW, halfH)) - 2);
+        var maxY = Mathf.Min(image.height - 1, Mathf.CeilToInt(pivotY + Mathf.Max(halfW, halfH)) + 2);
+
+        var tint = turret.TurretTopMaterial.color;
+
+        for (var y = minY; y <= maxY; y++)
+        {
+            for (var x = minX; x <= maxX; x++)
+            {
+                var localX = x + 0.5f - pivotX;
+                var localY = y + 0.5f - pivotY;
+
+                var srcX = (localX * cos) - (localY * sin);
+                var srcY = (localX * sin) + (localY * cos);
+
+                var u = (srcX / topWidth) + 0.5f;
+                var v = (srcY / topHeight) + 0.5f;
+                if (u < 0f || u > 1f || v < 0f || v > 1f)
+                {
+                    continue;
+                }
+
+                var src = topImage.GetPixelBilinear(u, v);
+                src *= tint;
+                if (src.a <= 0f)
+                {
+                    continue;
+                }
+
+                var dst = image.GetPixel(x, y);
+                var outA = src.a + (dst.a * (1f - src.a));
+                if (outA <= 0f)
+                {
+                    continue;
+                }
+
+                var outRgb = ((src * src.a) + (dst * dst.a * (1f - src.a))) / outA;
+                outRgb.a = outA;
+                image.SetPixel(x, y, outRgb);
+            }
+        }
+    }
+
+    private static Texture2D toReadableTexture(Texture texture)
+    {
+        var renderTexture = RenderTexture.GetTemporary(
+            texture.width,
+            texture.height,
+            0,
+            RenderTextureFormat.Default,
+            RenderTextureReadWrite.Linear);
+
+        Graphics.Blit(texture, renderTexture);
+        var previous = RenderTexture.active;
+        RenderTexture.active = renderTexture;
+
+        var readable = new Texture2D(texture.width, texture.height);
+        readable.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        readable.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(renderTexture);
+        return readable;
     }
 
     private static bool textureToBig(Texture texture)
