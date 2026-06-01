@@ -77,6 +77,12 @@ public static class DebugSpawning
                     return;
                 }
 
+                // Check if this is a modular weapon (Modular Weapons 2 support)
+                if (hasModularWeaponComponent(thing))
+                {
+                    Log.Message($"[SaveThingAsImage] Saving modular weapon: {thing.def.defName}");
+                }
+
                 saveTo = $"{Path.Combine(savePath, thing.LabelShort)}.png";
                 if (thing.Graphic.data?.graphicClass != null)
                 {
@@ -117,7 +123,20 @@ public static class DebugSpawning
         }
 
         var thingSize = new Vector2(meshSize.x * 256, meshSize.z * 256);
-        var texture = getThingTexture(thing, thingSize, new Vector2(meshSize.x, meshSize.z));
+        var worldSizeVec = new Vector2(meshSize.x, meshSize.z);
+
+        // For modular weapons, use the actual rendered texture dimensions
+        if (hasModularWeaponComponent(thing))
+        {
+            var texDim = getModularWeaponTextureDimensions(thing);
+            if (texDim != Vector2.zero)
+            {
+                thingSize = texDim;
+                worldSizeVec = texDim / 256f; // Calculate world size from texture dimensions
+            }
+        }
+
+        var texture = getThingTexture(thing, thingSize, worldSizeVec);
 
 
         var thingTextureAsPng = texture.EncodeToPNG();
@@ -163,14 +182,38 @@ public static class DebugSpawning
         }
         else
         {
-            texture = thing.Graphic.ExtractInnerGraphicFor(thing).MatAt(thing.Rotation).mainTexture;
-            if (thing.Graphic is Graphic_StackCount graphic_StackCount)
+            // Check if this is a modular weapon and get its custom material
+            var modularMaterial = hasModularWeaponComponent(thing) ? getModularWeaponMaterial(thing) : null;
+            var isModularWeapon = false;
+
+            if (modularMaterial != null)
             {
-                texture = graphic_StackCount.SubGraphicForStackCount(thing.stackCount, thing.def).MatSingleFor(thing)
-                    .mainTexture;
+                // Use the modular weapon's rendered material
+                texture = modularMaterial.mainTexture;
+                isModularWeapon = true;
+            }
+            else
+            {
+                // Use the standard rendering for non-modular weapons
+                texture = thing.Graphic.ExtractInnerGraphicFor(thing).MatAt(thing.Rotation).mainTexture;
+                if (thing.Graphic is Graphic_StackCount graphic_StackCount)
+                {
+                    texture = graphic_StackCount.SubGraphicForStackCount(thing.stackCount, thing.def)
+                        .MatSingleFor(thing)
+                        .mainTexture;
+                }
             }
 
-            Graphics.Blit(texture, renderTexture, thing.Graphic.MatAt(thing.Rotation, thing));
+            // For modular weapons, blit directly without material scaling
+            // For other items, use the material for proper rendering
+            if (isModularWeapon)
+            {
+                Graphics.Blit(texture, renderTexture);
+            }
+            else
+            {
+                Graphics.Blit(texture, renderTexture, thing.Graphic.MatAt(thing.Rotation, thing));
+            }
         }
 
         var image = new Texture2D(renderTexture.width, renderTexture.height);
@@ -347,5 +390,99 @@ public static class DebugSpawning
         }
 
         return false;
+    }
+
+    private static bool hasModularWeaponComponent(Thing thing)
+    {
+        try
+        {
+            var compType = AccessTools.TypeByName("ModularWeapons2.CompModularWeapon");
+            if (compType == null)
+            {
+                return false;
+            }
+
+            if (thing is not ThingWithComps thingWithComps)
+            {
+                return false;
+            }
+
+            // Use reflection to call GetComp<CompModularWeapon>()
+            var getCompMethod = typeof(ThingWithComps).GetMethod("GetComp");
+            if (getCompMethod == null)
+            {
+                return false;
+            }
+
+            var result = getCompMethod.MakeGenericMethod(compType).Invoke(thingWithComps, null);
+            return result != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static Material getModularWeaponMaterial(Thing thing)
+    {
+        try
+        {
+            var compType = AccessTools.TypeByName("ModularWeapons2.CompModularWeapon");
+            if (compType == null)
+            {
+                return null;
+            }
+
+            if (thing is not ThingWithComps thingWithComps)
+            {
+                return null;
+            }
+
+            // Get the CompModularWeapon component
+            var getCompMethod = typeof(ThingWithComps).GetMethod("GetComp");
+            if (getCompMethod == null)
+            {
+                return null;
+            }
+
+            var comp = getCompMethod.MakeGenericMethod(compType).Invoke(thingWithComps, null);
+            if (comp == null)
+            {
+                return null;
+            }
+
+            // Call GetMaterial() on the component
+            var getMaterialMethod = AccessTools.Method(compType, "GetMaterial");
+            if (getMaterialMethod == null)
+            {
+                return null;
+            }
+
+            var material = getMaterialMethod.Invoke(comp, null);
+            return material as Material;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static Vector2 getModularWeaponTextureDimensions(Thing thing)
+    {
+        try
+        {
+            var modularMaterial = getModularWeaponMaterial(thing);
+            if (modularMaterial == null || modularMaterial.mainTexture == null)
+            {
+                return Vector2.zero;
+            }
+
+            var texture = modularMaterial.mainTexture;
+            return new Vector2(texture.width, texture.height);
+        }
+        catch
+        {
+            return Vector2.zero;
+        }
     }
 }
